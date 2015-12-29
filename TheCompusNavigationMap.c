@@ -54,6 +54,8 @@ void Create(AdjMatrix * G)
     for(i = 1; i <= G->vexnum; i++){
         printf("第%d个地点:", i);
         scanf(" %s", G->vex[i]);
+        printf("请输入该地点的介绍：");
+        scanf(" %s", G->info[i]);
     }
     printf("请输入所有路线,比如宿舍 食堂代表宿舍到食堂的路线，输入0 0结束输入：");
     while(1){
@@ -99,6 +101,7 @@ void printAdjMatrix(AdjMatrix * G)
         }
         printf("\n");
     }
+    getchar();
 }
 
 void ReadFileCreateAdjMatrix(AdjMatrix * G)         //从文件中读取数据创建邻接矩阵
@@ -123,17 +126,21 @@ void menu(AdjMatrix * G)
 {
     int select;
     while(1){
-        printf("\t\t\t校园导航图\n");
-        printf("\t\t1.创建路线图\n");
-        printf("\t\t2.显示指定地点的信息\n");
-        printf("\t\t3.显示指定两地的简单路径\n");
-        printf("\t\t4.显示指定两地的最短路线\n");
-        printf("\t\t5.增加新的地点\n");
-        printf("\t\t6.增加新的路线");
-        printf("\t\t7.删除指定路线\n");
-        printf("\t\t8.删除旧地点\n");
-        printf("\t\t9.显示创建的邻接矩阵\n");
-        printf("请选择：");
+        system("clear");
+        printf("\n\n\t\t\t\t校园导航图\n");
+        printf("\t\t\t*************************\n");
+        printf("\t\t\t1.创建新的路线图\n");
+        printf("\t\t\t2.显示指定地点的信息\n");
+        printf("\t\t\t3.显示指定两地的简单路径\n");
+        printf("\t\t\t4.显示指定两地的最短路线\n");
+        printf("\t\t\t5.增加新的地点\n");
+        printf("\t\t\t6.增加新的路线\n");
+        printf("\t\t\t7.删除指定路线\n");
+        printf("\t\t\t8.删除旧地点\n");
+        printf("\t\t\t9.显示创建的邻接矩阵\n");
+        printf("\t\t\t0.退出\n");
+        printf("\t\t\t*************************\n");
+        printf("\t\t\t\t请选择：");
         scanf(" %d", &select);
         switch(select){
             case 1:
@@ -163,10 +170,75 @@ void menu(AdjMatrix * G)
             case 9:
             printAdjMatrix(G);
             break;
+            case 0:
+            exit(0);
             default:
             continue;
         }
     }
+}
+
+void displayAddressInfo(AdjMatrix * G)
+{
+    system("clear");
+    int num;
+    char str[30];
+    printf("请输入要显示信息的地点名：");
+    scanf(" %s", str);
+    num = getVexNo(G, str);
+    if(num == -1){
+        printf("该地点不存在！");
+    }else{
+        printf("%s 简介:%s\n", G->vex[num], G->info[num]);
+    }
+    getchar();
+    getchar();
+}
+
+void displaySimplePath(AdjMatrix * G)
+{
+    
+}
+
+void displayShortestPath(AdjMatrix * G)
+{
+    system("clear");
+    char str1[30], str2[30];
+    int vex1, vex2;
+    printf("请输入起点和终点，中间用空格隔开：");
+    scanf(" %s %s", str1, str2);
+    vex1 = getVexNo(G, str1);
+    vex2 = getVexNo(G, str2);
+}
+
+void addNewAddress(AdjMatrix * G)
+{
+    
+}
+
+void addNewPath(AdjMatrix * G)
+{
+    
+}
+
+void delOldAddress(AdjMatrix * G)
+{
+    
+}
+
+void delOldPath(AdjMatrix * G)
+{
+
+}
+
+void addInfo(AdjMatrix * G)             //添加地点介绍用
+{
+    int i;
+    for(i = 1; i <= G->vexnum; i++){
+        printf("请输入%s的介绍：", G->vex[i]);
+        scanf(" %s", G->info[i]);
+    }
+    WriteFileAdjMatrix(G);
 }
 
 int main(void)
@@ -174,6 +246,6 @@ int main(void)
     AdjMatrix * G;
     G = (AdjMatrix *)malloc(sizeof(AdjMatrix));
     ReadFileCreateAdjMatrix(G);
+    //addInfo(G);
     menu(G);
-    printAdjMatrix(G);
 }
