@@ -23,8 +23,7 @@ typedef struct{                     //定义图的数据类型
 void WriteFileAdjMatrix(AdjMatrix * );          //将邻接矩阵写入文件
 void delOldAddress(AdjMatrix *);                //删除旧地点
 void delOldPath(AdjMatrix * );                  //删除指定路线
-void addNewAddress(AdjMatrix *);                //增加新的地点
-void addNewPath(AdjMatrix *);                   //增加新的路线
+void addNewAddressPath(AdjMatrix *);            //增加新的地点和路径
 void displayAddressInfo(AdjMatrix *);           //显示指定地点的信息
 void displaySimplePath(AdjMatrix *);            //显示指定两地的简单路径
 void displayShortestPath(AdjMatrix *);          //显示指定两地的最短路线
@@ -85,22 +84,82 @@ void printAdjMatrix(AdjMatrix * G)
 {
     int i, j;
     printf("\nAdjMatrix:\n");
-    printf("        ");
+    printf("     ");
     for(i = 1; i <= G->vexnum; i++){
-        printf("%8s", G->vex[i]);
+        printf("%5s", G->vex[i]);
     }
     printf("\n");
     for(i = 1; i <= G->vexnum; i++){
-        printf("%8s", G->vex[i]);
+        printf("%-15s", G->vex[i]);
         for(j = 1; j <= G->vexnum; j++){
             if(G->arcs[i][j] == INFINITY){
-                printf("  ------");
+                printf(" ----");
             }else{
-                printf("%8d", G->arcs[i][j]);
+                printf("%5d", G->arcs[i][j]);
             }
         }
         printf("\n");
     }
+    getchar();
+}
+
+void prime(AdjMatrix * G, int start)
+{
+    struct {
+        int adjvex;
+        int lowcost;
+    }closedge[MAXVEX];
+    struct{
+        char vex1[30];
+        char vex2[30];
+        int distance;
+    }primeTree[MAXVEX];
+    int i, e, k, m, min;
+    closedge[start].lowcost = 0;
+    for(i = 1; i <= G->vexnum; i++){
+        if(i != start){
+            closedge[i].adjvex = start;
+            closedge[i].lowcost = G->arcs[start][i];
+        }
+    }
+    for(e = 1; e <= G->vexnum; e++){
+        min = INFINITY;
+        for(k = 1; k <= G->vexnum; k++){
+            if(closedge[k].lowcost != 0 && closedge[k].lowcost < min){
+                m = k;
+                min = closedge[k].lowcost;
+            }
+        }
+        strcpy(primeTree[e].vex1, G->vex[closedge[m].adjvex]);
+        strcpy(primeTree[e].vex2, G->vex[m]);
+        primeTree[e].distance = min;
+        closedge[m].lowcost = 0;
+        for(i = 1; i <= G->vexnum; i++){
+            if(i != m && G->arcs[m][i] < closedge[i].lowcost){
+                closedge[i].lowcost = G->arcs[m][i];
+                closedge[i].adjvex = m;
+            }
+        }
+    }
+    printf("最佳布网路线如下：\n");
+    for(i = 1; i <= G->vexnum - 1; i++){
+        printf("%s-->%s 距离：%d\n", primeTree[i].vex1, primeTree[i].vex2, primeTree[i].distance);
+    }
+}
+
+void printPath(AdjMatrix * G)
+{
+    system("clear");
+    int i, j;
+    for(i = 1; i <= G->vexnum; i++){
+        for(j = 1; j <= G->vexnum; j++){
+            if(G->arcs[i][j] != INFINITY){
+                printf("%s-->%s 距离：%d     ", G->vex[i], G->vex[j], G->arcs[i][j]);
+            }
+        }
+        printf("\n");
+    }
+    getchar();
     getchar();
 }
 
@@ -122,6 +181,26 @@ void WriteFileAdjMatrix(AdjMatrix * G)
     fclose(fp);
 }
 
+void bestNetworkPath(AdjMatrix * G)
+{
+    system("clear");
+    char str[30];
+    int num;
+    printf("请输入布网起点：");
+    scanf(" %s", str);
+    num = getVexNo(G, str);
+    if(num == -1){
+        printf("该地点不存在！任意键返回……");
+        getchar();
+        getchar();
+        return ;
+    }else{
+        prime(G, num);
+    }
+    getchar();
+    getchar();
+}
+
 void menu(AdjMatrix * G)
 {
     int select;
@@ -133,14 +212,14 @@ void menu(AdjMatrix * G)
         printf("\t\t\t2.显示指定地点的信息\n");
         printf("\t\t\t3.显示指定两地的简单路径\n");
         printf("\t\t\t4.显示指定两地的最短路线\n");
-        printf("\t\t\t5.增加新的地点\n");
-        printf("\t\t\t6.增加新的路线\n");
-        printf("\t\t\t7.删除指定路线\n");
-        printf("\t\t\t8.删除旧地点\n");
-        printf("\t\t\t9.显示创建的邻接矩阵\n");
+        printf("\t\t\t5.增加新的地点和路线\n");
+        printf("\t\t\t6.删除指定路线\n");
+        printf("\t\t\t7.删除旧地点\n");
+        printf("\t\t\t8.显示所有的路线\n");
+        printf("\t\t\t9.最佳布网方案\n");
         printf("\t\t\t0.退出\n");
         printf("\t\t\t*************************\n");
-        printf("\t\t\t\t请选择：");
+        printf("\t\t\t  请选择：");
         scanf(" %d", &select);
         switch(select){
             case 1:
@@ -156,19 +235,19 @@ void menu(AdjMatrix * G)
             displayShortestPath(G);
             break;
             case 5:
-            addNewAddress(G);
+            addNewAddressPath(G);
             break;
             case 6:
-            addNewPath(G);
-            break;
-            case 7:
             delOldPath(G);
             break;
-            case 8:
+            case 7:
             delOldAddress(G);
             break;
+            case 8:
+            printPath(G);
+            break;
             case 9:
-            printAdjMatrix(G);
+            bestNetworkPath(G);
             break;
             case 0:
             exit(0);
@@ -200,30 +279,110 @@ void displaySimplePath(AdjMatrix * G)
     
 }
 
-void displayShortestPath(AdjMatrix * G)
+void Dijkstra(AdjMatrix * G, int start, int dist[], int path[][MAXVEX])         //求起点到所有点的最短路径
+{
+    int mindist, i, j, k, t = 1;
+    for(i = 1; i <= G->vexnum; i++){
+        dist[i] = G->arcs[start][i];
+        if(G->arcs[start][i] != INFINITY){
+            path[i][1] = start;
+        }
+    }
+
+    for(i = 2; i <= G->vexnum; i++){
+        mindist = INFINITY;
+        for(j = 1; j <= G->vexnum; j++){
+            if(!path[j][0] && dist[j] < mindist){
+                k = j;
+                mindist = dist[j];
+            }
+        }
+        if(mindist == INFINITY){
+            return ;
+        }
+        path[k][0] = 1;
+        for(j = 1; j <= G->vexnum; j++){
+            if(!path[j][0] && G->arcs[k][j] < INFINITY && dist[k] + G->arcs[k][j] < dist[j]){
+                dist[j] = dist[k] + G->arcs[k][j];
+                t = 1;
+                while(path[k][t] != 0){
+                    path[j][t] = path[k][t];
+                    t++;
+                }
+                path[j][t] = k;
+                path[j][t+1] = 0;
+            }
+        }
+    }
+}
+
+void displayShortestPath(AdjMatrix * G)                 //显示两地之间最短路径
 {
     system("clear");
     char str1[30], str2[30];
-    int vex1, vex2;
+    int start, end, dist[MAXVEX], i = 1;
     printf("请输入起点和终点，中间用空格隔开：");
     scanf(" %s %s", str1, str2);
-    vex1 = getVexNo(G, str1);
-    vex2 = getVexNo(G, str2);
+    start = getVexNo(G, str1);
+    end = getVexNo(G, str2);
+    if(start == -1 || end == -1){
+        printf("该地点不存在!任意键返回……");
+        getchar();
+        getchar();
+        return ;
+    }
+    int path[MAXVEX][MAXVEX] = {0};
+    Dijkstra(G, start, dist, path);
+    while(path[end][i]){
+        printf("%s-->", G->vex[path[end][i]]);
+        i++;
+    }
+    printf("%s\n", G->vex[end]);
+    getchar();
+    getchar();
 }
 
-void addNewAddress(AdjMatrix * G)
+void addNewAddressPath(AdjMatrix * G)
 {
-    
-}
-
-void addNewPath(AdjMatrix * G)
-{
-    
+    char str[30];
+    int vexnum;
+    int num1, i;
+    int distance;
+    printf("请输入地点名：");
+    scanf(" %s", str);
+    vexnum = G->vexnum;
+    G->vexnum++;
+    vexnum++;
+    strcpy(G->vex[vexnum], str);
+    for(i = 1; i <= G->vexnum; i++){
+        G->arcs[vexnum][i] = INFINITY;
+        G->arcs[i][vexnum] = INFINITY;
+    }
+    printf("请输入与该地点有路径的地点和它们之间的距离（中间用空格隔开，0 0 代表结束输入）：");
+    while(1){
+        scanf(" %s %d", str, &distance);
+        if(!strcmp(str, "0")){
+            break;
+        }
+        num1 = getVexNo(G, str);
+        if(num1 == -1){
+            printf("该地点不存在！按任意键返回……");
+            getchar();
+            getchar();
+            return ;
+        }else{
+            G->arcs[vexnum][num1] = distance;
+            G->arcs[num1][vexnum] = distance;
+        }
+    }
+    WriteFileAdjMatrix(G);
 }
 
 void delOldAddress(AdjMatrix * G)
 {
-    
+    char str[30];
+    printf("输入要删除的地点：");
+    scanf(" %s", str);
 }
 
 void delOldPath(AdjMatrix * G)
