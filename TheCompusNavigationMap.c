@@ -70,8 +70,8 @@ void CreateGraph(AdjList * adjacency_list)
     }
     for(i = 1; i <= adjacency_list->vexnum; i++){
         tail = adjacency_list->vertex[i].head;
+        adjacency_list->vertex[i].AdjVexNum = 0;
         while(1){
-            adjacency_list->vertex[i].AdjVexNum = 0;
             printf("请输入与%s相邻的地点(输入‘0’结束)", adjacency_list->vertex[i].vexdata);
             scanf(" %s", adjvex);
             if(strcmp(adjvex, "0")){
@@ -89,10 +89,11 @@ void CreateGraph(AdjList * adjacency_list)
                 break;
             }
         }
+        printf("num:%d\n", adjacency_list->vertex[i].AdjVexNum);
     }
     for(i = 1; i <= adjacency_list->vexnum; i++){
         fwrite(&(adjacency_list->vertex[i]), sizeof(VertexNode), 1, fpVex);
-        tail = adjacency_list->vertex[i].head;          //从head位置开始将下一个邻接点写入文件
+        tail = adjacency_list->vertex[i].head->next;          //从head位置开始将下一个邻接点写入文件
         while(tail != NULL){
             fwrite(tail, sizeof(ArcNode), 1, fpArc);
             tail = tail->next;
@@ -110,9 +111,68 @@ void CreateGraph(AdjList * adjacency_list)
     }
 }
 
+void ReadFileCreateGraph(AdjList * adjacency_list)
+{
+    int i = 1, j;
+    ArcNode * tail, *pArc;
+    FILE * fpVex, * fpArc;
+    fpVex = fopen("VertexNode.txt", "r");
+    fpArc = fopen("ArcNode.txt", "r");
+    if(fpVex == NULL || fpArc == NULL){
+        printf("文件访问出错!\n");
+        exit(1);
+    }
+    while(fread(&(adjacency_list->vertex[i]), sizeof(VertexNode), 1, fpVex) != 0 && !feof(fpVex)){
+        adjacency_list->vertex[i].head = (ArcNode *)malloc(sizeof(ArcNode));
+        adjacency_list->vertex[i].head->next = NULL;
+        tail = adjacency_list->vertex[i].head;
+        printf("num%d\n", adjacency_list->vertex[i].AdjVexNum);
+        for(j = 1;j <= adjacency_list->vertex[i].AdjVexNum; j++){
+            pArc = (ArcNode *)malloc(sizeof(ArcNode));
+            if(fread(pArc, sizeof(ArcNode), 1, fpArc) != 0 && !feof(fpArc))
+            {
+                tail->next = pArc;
+                tail = pArc;
+            }else{
+                tail->next = NULL;
+            }
+        }
+        i++;
+    }
+    i--;
+    adjacency_list->vexnum = i;
+    printf("adjacency_list->vexnum : %d\n", adjacency_list->vexnum);
+    printf("创建完成的邻接表如下:\n");
+    for(i = 1; i <= adjacency_list->vexnum; i++){
+        ArcNode * p = adjacency_list->vertex[i].head->next;
+        printf("No.%d %s\n", i, adjacency_list->vertex[i].vexdata);
+        while(p){
+            printf("->%d, %d\n", p->adjvex, p->distance);
+            p = p->next;
+        }
+        printf("\n");
+    }
+}
+
 int main(void)
 {
+    int select;
     AdjList * adjlist;
     adjlist = (AdjList *)malloc(sizeof(AdjList));
-    CreateGraph(adjlist);
+    ReadFileCreateGraph(adjlist);
+    //CreateGraph(adjlist);
+    /*while(1){
+        printf("\t\t\t校园导航图\n");
+        printf("\t\t1.显示所有的路线及距离\n");
+        printf("\t\t2.显示所有的地点及介绍\n");
+        printf("\t\t3.搜索地点的相关信息\n");
+        printf("\t\t4.搜索两地点之间的路线\n");
+        printf("\t\t5.搜索两地点之间最短距离\n");
+        printf("\t请选择：");
+        scanf("%d", &select);
+        switch(select){
+            case 1:
+            break;
+        }
+    }*/
 }
