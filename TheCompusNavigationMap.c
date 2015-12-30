@@ -8,6 +8,8 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include"man.c"
+#include"stack.c"
 
 #define MAXVEX 30
 #define INFINITY 32768
@@ -19,6 +21,8 @@ typedef struct{                     //定义图的数据类型
     int vexnum;                         //地点个数
     int arcnum;                         //路线个数
 }AdjMatrix;
+
+int visit[MAXVEX] = {0};
 
 void WriteFileAdjMatrix(AdjMatrix * );          //将邻接矩阵写入文件
 void delOldAddress(AdjMatrix *);                //删除旧地点
@@ -177,6 +181,12 @@ void ReadFileCreateAdjMatrix(AdjMatrix * G)         //从文件中读取数据�
 void WriteFileAdjMatrix(AdjMatrix * G)
 {
     FILE * fp = fopen("AdjMatrix.txt", "wr");
+    if(fp == NULL){
+        printf("文件访问出错，任意键返回……");
+        getchar();
+        getchar();
+        return;
+    }
     fwrite(G, sizeof(AdjMatrix), 1, fp);
     fclose(fp);
 }
@@ -213,10 +223,11 @@ void menu(AdjMatrix * G)
         printf("\t\t\t3.显示指定两地的简单路径\n");
         printf("\t\t\t4.显示指定两地的最短路线\n");
         printf("\t\t\t5.增加新的地点和路线\n");
-        printf("\t\t\t6.删除指定路线\n");
-        printf("\t\t\t7.删除旧地点\n");
+        printf("\t\t\t6.删除旧地点\n");
+        printf("\t\t\t7.删除指定路线\n");
         printf("\t\t\t8.显示所有的路线\n");
         printf("\t\t\t9.最佳布网方案\n");
+        printf("\t\t\t10.显示平面图\n");
         printf("\t\t\t0.退出\n");
         printf("\t\t\t*************************\n");
         printf("\t\t\t  请选择：");
@@ -238,16 +249,19 @@ void menu(AdjMatrix * G)
             addNewAddressPath(G);
             break;
             case 6:
-            delOldPath(G);
+            delOldAddress(G);
             break;
             case 7:
-            delOldAddress(G);
+            delOldPath(G);
             break;
             case 8:
             printPath(G);
             break;
             case 9:
             bestNetworkPath(G);
+            break;
+            case 10:
+            showman();
             break;
             case 0:
             exit(0);
@@ -274,9 +288,37 @@ void displayAddressInfo(AdjMatrix * G)
     getchar();
 }
 
+int gettopnextAdj(AdjMatrix * G, Stack * S, int top, int st)        //取当前栈顶的 下一个 邻接点，上一个邻接点是退栈前的栈定
+{
+    int i;
+    for(i = 1; i <= G->vexnum; i++){
+        
+    }
+}
+
 void displaySimplePath(AdjMatrix * G)
 {
-    
+    char str1[30], str2[30];
+    int start, end, st = 0, top;
+    Stack * S;
+    S = (Stack * )malloc(sizeof(Stack));
+    S->top = -1;
+    printf("请输入起点和终点，中间用空格隔开:");
+    scanf(" %s %s", str1, str2);
+    start = getVexNo(G, str1);
+    end = getVexNo(G, str2);
+    if(start == -1 || end == -1){
+        printf("该地点不存在，任意键返回……");
+        getchar();
+        getchar();
+        return;
+    }
+    in(S, start);
+    visit[start] = 1;
+    while(!isEmpty(S)){
+        gettop(S, &top);
+        st = gettopnextAdj(G, S, top, st);
+    }
 }
 
 void Dijkstra(AdjMatrix * G, int start, int dist[], int path[][MAXVEX])         //求起点到所有点的最短路径
@@ -352,6 +394,8 @@ void addNewAddressPath(AdjMatrix * G)
     scanf(" %s", str);
     vexnum = G->vexnum;
     G->vexnum++;
+    printf("请输入地点的介绍：");
+    scanf(" %s", G->info[G->vexnum]);
     vexnum++;
     strcpy(G->vex[vexnum], str);
     for(i = 1; i <= G->vexnum; i++){
@@ -383,11 +427,60 @@ void delOldAddress(AdjMatrix * G)
     char str[30];
     printf("输入要删除的地点：");
     scanf(" %s", str);
+    int num;
+    num = getVexNo(G, str);
+    if(num == -1){
+        printf("该地点不存在！！任意键返回……");
+        getchar();
+        getchar();
+        return;
+    }
+    int i, j;
+    for(i = num; i <= G->vexnum - 1; i++){          //移动地点数组
+        strcpy(G->vex[i], G->vex[i+1]);
+        strcpy(G->info[i], G->info[i+1]);
+    }
+    //移动边的长度到对应的矩阵位置
+    for(i = num; i <= G->vexnum - 1; i++){
+        for(j = 1; j <= G->vexnum; j++){
+            G->arcs[i][j] = G->arcs[i+1][j];
+        }
+    }
+    for(j = num; j <= G->vexnum - 1; j++){
+        for(i = 1; i <= G->vexnum -1; i++){
+            G->arcs[i][j] = G->arcs[i][j+1];
+        }
+    }
+    G->vexnum--;
 }
 
 void delOldPath(AdjMatrix * G)
 {
-
+    char str1[30], str2[30];
+    int num1, num2;
+    printf("请输入路径的起点和终点用空格隔开：");
+    scanf(" %s %s", str1, str2);
+    num1 = getVexNo(G, str1);
+    num2 = getVexNo(G, str2);
+    if(num1 == -1){
+        printf("起点不存在！任意键返回……");
+        getchar();
+        getchar();
+        return;
+    }else if(num2 == -1){
+        printf("终点不存在！任意键返回……");
+        getchar();
+        getchar();
+        return;
+    }else if(G->arcs[num1][num2] == INFINITY){
+        printf("该路径不存在！任意键返回");
+        getchar();
+        getchar();
+        return;
+    }else{
+        G->arcs[num1][num2] = INFINITY;
+    }
+    return;
 }
 
 void addInfo(AdjMatrix * G)             //添加地点介绍用
