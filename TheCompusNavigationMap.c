@@ -211,6 +211,30 @@ void bestNetworkPath(AdjMatrix * G)
     getchar();
 }
 
+void onlyAddNewPath(AdjMatrix * G)
+{
+    system("clear");
+    int distance, num1, num2;
+    char str1[30], str2[30];
+    printf("请输入路径的起点和终点：");
+    scanf(" %s %s", str1, str2);
+    num1 = getVexNo(G, str1);
+    num2 = getVexNo(G, str2);
+    if(num1 == -1 || num2 == -1){
+        printf("该地点不存在！任意键返回……");
+        getchar();
+        getchar();
+        return ;
+    }
+    printf("请输入%s到%s的距离：", str1, str2);
+    scanf(" %d", &distance);
+    G->arcs[num1][num2] = distance;
+    WriteFileAdjMatrix(G);
+    printf("添加/修改成功,任意键返回……");
+    getchar();
+    getchar();
+}
+
 void menu(AdjMatrix * G)
 {
     int select;
@@ -228,6 +252,7 @@ void menu(AdjMatrix * G)
         printf("\t\t\t8.显示所有的路线\n");
         printf("\t\t\t9.最佳布网方案\n");
         printf("\t\t\t10.显示平面图\n");
+        printf("\t\t\t11.添加新路线或修改路线长度\n");
         printf("\t\t\t0.退出\n");
         printf("\t\t\t*************************\n");
         printf("\t\t\t  请选择：");
@@ -263,6 +288,9 @@ void menu(AdjMatrix * G)
             case 10:
             showman();
             break;
+            case 11:
+            onlyAddNewPath(G);
+            break;
             case 0:
             exit(0);
             default:
@@ -288,18 +316,26 @@ void displayAddressInfo(AdjMatrix * G)
     getchar();
 }
 
-int gettopnextAdj(AdjMatrix * G, Stack * S, int top, int st)        //取当前栈顶的 下一个 邻接点，上一个邻接点是退栈前的栈定
+int gettopnextAdj(AdjMatrix * G, int top, int st)        //取当前栈顶的 下一个 邻接点，上一个邻接点是退栈前的栈定
 {
     int i;
-    for(i = 1; i <= G->vexnum; i++){
-        
+    for(i = st + 1; i <= G->vexnum; i++){
+        if(G->arcs[top][i] != INFINITY){
+            return i;
+        }else{
+            continue;
+        }
     }
+    return 0;
 }
 
 void displaySimplePath(AdjMatrix * G)
 {
+    system("clear");
     char str1[30], str2[30];
-    int start, end, st = 0, top;
+    int start, end, st = 0, top, i;
+    int count = INFINITY;
+    int mindist[MAXVEX];
     Stack * S;
     S = (Stack * )malloc(sizeof(Stack));
     S->top = -1;
@@ -315,10 +351,42 @@ void displaySimplePath(AdjMatrix * G)
     }
     in(S, start);
     visit[start] = 1;
+    printf("\n\n%s到%s的简单路径如下：\n", str1, str2);
     while(!isEmpty(S)){
         gettop(S, &top);
-        st = gettopnextAdj(G, S, top, st);
+        st = gettopnextAdj(G, top, st);
+        if(st == 0){
+            out(S, &st);
+            visit[st] = 0;
+        }else if(st != 0 && visit[st] == 0){
+            in(S, st);
+            visit[st] = 1;
+            if(st == end){
+                if(count > S->top + 1){
+                    count = S->top + 1;
+                    for(i = 0; i < count; i++){
+                        mindist[i] = S->num[i];
+                    }
+                }
+                printf("%s", G->vex[S->num[0]]);
+                for(i = 1; i <= S->top; i++){
+                    printf("-->%s", G->vex[S->num[i]]);
+                }
+                printf("\n");
+            }
+        }
     }
+    printf("\n\n中转次数最少的路径如下：\n");
+    for(i = 0; i < count; i++){
+        if(i == 0){
+            printf("%s", G->vex[mindist[i]]);
+        }else{
+            printf("-->%s", G->vex[mindist[i]]);
+        }
+    }
+    printf("\n\n");
+    getchar();
+    getchar();
 }
 
 void Dijkstra(AdjMatrix * G, int start, int dist[], int path[][MAXVEX])         //求起点到所有点的最短路径
@@ -402,7 +470,7 @@ void addNewAddressPath(AdjMatrix * G)
         G->arcs[vexnum][i] = INFINITY;
         G->arcs[i][vexnum] = INFINITY;
     }
-    printf("请输入与该地点有路径的地点和它们之间的距离（中间用空格隔开，0 0 代表结束输入）：");
+    printf("请输入与该地点有路径的地点和它们之间的距离（中间用空格隔开，0 0 代表结束输入）：\n");
     while(1){
         scanf(" %s %d", str, &distance);
         if(!strcmp(str, "0")){
@@ -456,6 +524,7 @@ void delOldAddress(AdjMatrix * G)
 
 void delOldPath(AdjMatrix * G)
 {
+    system("clear");
     char str1[30], str2[30];
     int num1, num2;
     printf("请输入路径的起点和终点用空格隔开：");
